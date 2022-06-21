@@ -4,7 +4,9 @@
 import numpy as np
 import time
 
-def simulatedAnnealing(x_start, costFunc, numCycles = 200000, PROBACCEPTIFBETTER = 0.999, PROBACCEPTIFWORSE = 0.001, tol = 25.0):
+def simulatedAnnealing(x_start, costFunc, numCycles = 200000,
+                        PROBACCEPTIFBETTER = 0.999,
+                        PROBACCEPTIFWORSE = 0.001, tol = 25.0):
 
     NUMDOMAIN = len(x_start)
     x = np.zeros((numCycles+1,NUMDOMAIN)) # (NUMCYCLE, NUMVARIABLES)

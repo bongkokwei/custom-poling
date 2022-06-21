@@ -9,6 +9,7 @@ from numpy.linalg import eig, inv
 from scipy.optimize import curve_fit
 from scipy.integrate import simps
 
+
 ###############################################################################
 # GLOBAL VARIABLE
 PI = np.pi
@@ -17,13 +18,15 @@ PERMITTIVITY = 8.85418782E-12
 EFFICICIENCYFACTOR = 1.0
 CHI2EFF = 1E-8
 HBAR = 1.05457173E-34
-# lc = 23.11E-6 #meters
 ############################## Helper functions ##############################
 def Gauss(x, a, x0, sigma):
     return a*np.exp(-(x-x0)**2/(2*sigma**2))
 
 def wavelength2AngFreq(wavelength):
-    return 2*PI*(C/wavelength)
+    return (2*PI*C)/wavelength
+
+def angFreq2Wavelength(angFreq):
+    return (2*PI*C/angFreq)
 
 def fwhm2Sigma(FWHM, wavelength):
     # approximation to convert FWHM in wavelength to FWHM in angular frequency
@@ -94,6 +97,9 @@ def fitEllipse(x,y):
     a = V[:,n]
     return a
 
+def spectrafit(x, a, x0, sigma):
+    return a*np.exp(-(x-x0)**2/(2*sigma**2))
+
 def plotFigure(Phi, PEF, JSI, signal, idler,\
                nlevels=50, colormap = 'viridis', textColour = 'black',\
                filename = "figures/test.tif", figFormat = "tif", toPrint=False,\
@@ -107,43 +113,43 @@ def plotFigure(Phi, PEF, JSI, signal, idler,\
     if printDark:
         plt.style.use('dark_background')
     ## FIGURE 1 ##
-    figure1 = plt.figure(figsize=(15,4))
-    figSpc1 = figure1.add_gridspec(nrows = 1, ncols = 3, \
-                                   width_ratios=[1., 1., 1.], height_ratios=[1.])
-    figure1.add_subplot(figSpc1[0,0])
-    plt.xlim([startWavelength, endWavelength])
-    plt.ylim([startWavelength, endWavelength])
-    plt.yticks(color=textColour)
-    plt.xticks(color=textColour)
-    plt.xlabel('Idler wavelength (nm)', color=textColour)
-    plt.ylabel('Signal wavelength (nm)', color=textColour)
-    plt.title('Phase-match Function', color=textColour)
-    plt.locator_params(axis='y', nbins=5) # Number of ticks
-    plt.locator_params(axis='x', nbins=5)
-    phase = plt.contourf(signal*1E9, idler*1E9, Phi, \
-                         levels = nlevels, cmap = colormap)
-    figure1.add_subplot(figSpc1[0,1])
-    plt.xlim([startWavelength, endWavelength])
-    plt.ylim([startWavelength, endWavelength])
-    plt.xticks(color=textColour)
-    plt.xlabel('Idler wavelength (nm)', color=textColour)
-    plt.yticks([])
-    plt.title('Pump Envelope Function', color=textColour)
-    plt.locator_params(axis='x', nbins=5)
-    pump = plt.contourf(signal*1E9, idler*1E9, PEF,\
-                        levels = nlevels, cmap = colormap)
-    figure1.add_subplot(figSpc1[0,2])
-    plt.xlim([startWavelength, endWavelength])
-    plt.ylim([startWavelength, endWavelength])
-    plt.xticks(color=textColour)
-    plt.xlabel('Idler wavelength (nm)', color=textColour)
-    plt.yticks([])
-    plt.title('Joint Spectral Intensity', color=textColour)
-    plt.locator_params(axis='x', nbins=5)
-    joint = plt.contourf(signal*1E9, idler*1E9, JSI, \
-                         levels = nlevels, cmap = colormap)
-
-    plt.savefig(filename, format = figFormat, transparent = printTransparent)
+    # figure1 = plt.figure(figsize=(15,4))
+    # figSpc1 = figure1.add_gridspec(nrows = 1, ncols = 3, \
+    #                                width_ratios=[1., 1., 1.], height_ratios=[1.])
+    # figure1.add_subplot(figSpc1[0,0])
+    # plt.xlim([startWavelength, endWavelength])
+    # plt.ylim([startWavelength, endWavelength])
+    # plt.yticks(color=textColour)
+    # plt.xticks(color=textColour)
+    # plt.xlabel('Idler wavelength (nm)', color=textColour)
+    # plt.ylabel('Signal wavelength (nm)', color=textColour)
+    # plt.title('Phase-match Function', color=textColour)
+    # plt.locator_params(axis='y', nbins=5) # Number of ticks
+    # plt.locator_params(axis='x', nbins=5)
+    # phase = plt.contourf(signal*1E9, idler*1E9, Phi, \
+    #                      levels = nlevels, cmap = colormap)
+    # figure1.add_subplot(figSpc1[0,1])
+    # plt.xlim([startWavelength, endWavelength])
+    # plt.ylim([startWavelength, endWavelength])
+    # plt.xticks(color=textColour)
+    # plt.xlabel('Idler wavelength (nm)', color=textColour)
+    # plt.yticks([])
+    # plt.title('Pump Envelope Function', color=textColour)
+    # plt.locator_params(axis='x', nbins=5)
+    # pump = plt.contourf(signal*1E9, idler*1E9, PEF,\
+    #                     levels = nlevels, cmap = colormap)
+    # figure1.add_subplot(figSpc1[0,2])
+    # plt.xlim([startWavelength, endWavelength])
+    # plt.ylim([startWavelength, endWavelength])
+    # plt.xticks(color=textColour)
+    # plt.xlabel('Idler wavelength (nm)', color=textColour)
+    # plt.yticks([])
+    # plt.title('Joint Spectral Intensity', color=textColour)
+    # plt.locator_params(axis='x', nbins=5)
+    # joint = plt.contourf(signal*1E9, idler*1E9, JSI, \
+    #                      levels = nlevels, cmap = colormap)
+    #
+    # plt.savefig(filename, format = figFormat, transparent = printTransparent)
 
     ## FIGURE 2 ##
     figure2 = plt.figure(figsize=(15,6))
@@ -165,15 +171,16 @@ def plotFigure(Phi, PEF, JSI, signal, idler,\
 
     # Corner text
     delta = 1E-3*(endWavelength-startWavelength)/2 #MICRON
-    centerInMicron_s = (center[0]/numGrid*(2*delta)+startWavelength*1E-3)
-    centerInMicron_i = (endWavelength*1E-3 - center[0]/numGrid*(2*delta))
+    centerInMicron_s = (center[0]/numGrid*(2*delta)+startWavelength*1E-3)*1E3
+    centerInMicron_i = (endWavelength*1E-3 - center[0]/numGrid*(2*delta))*1E3
     centerInMicron = np.array([centerInMicron_s, centerInMicron_i])
     axesInNano = (axes/numGrid*2*delta)*1E3 #NANOMETER
-    line1 = 'center = [{0[0]:0.04f}, {0[1]:0.04f}] $\mu$m\n'.format(centerInMicron)
+    line1 = 'center = [{0[0]:0.02f}, {0[1]:0.02f}] nm\n'.format(centerInMicron)
     line2 = 'angle of rotation =  {0:0.02f}$^\circ$ \n'.format(phi)
     line3 = 'axes =  [{0[0]:0.04f}, {0[1]:0.04f}] nm\n'.format(axesInNano)
     line4 = 'eccentricity = {0:0.04f}'.format(eccentricity)
     text = line1+line2+line3+line4
+
     if printText:
         plt.text(0,numGrid-1, text, color='white', multialignment="left")
 
@@ -183,21 +190,21 @@ def plotFigure(Phi, PEF, JSI, signal, idler,\
     plt.xlabel('Signal wavelength ($\mu$m)')
     signalJSI = np.sum(JSI, axis=0)
     plt.plot(wavelength, signalJSI)
-    plt.axvline(x=1.55, linestyle='--', color='m')
+    plt.axvline(x=signal[0,mid]*1E6, linestyle='--', color='m')
     plt.locator_params(axis='x', nbins=5)
     figure2.add_subplot(figSpc2[0,0]) #idler
     plt.xticks([])
     plt.ylabel('Idler wavelength ($\mu$m)')
     plt.locator_params(axis='y', nbins=7)
     idlerJSI = np.sum(JSI, axis=1)
-    plt.axhline(y=1.55, linestyle='--', color='m')
+    plt.axhline(y=idler[mid,0]*1E6, linestyle='--', color='m')
     plt.plot(idlerJSI[::-1], wavelength)
     figure2.add_subplot(figSpc2[1,0])
     plt.yticks([])
     plt.locator_params(axis='x', nbins=3)
     plt.plot(wavelength, signalJSI)
     plt.plot(wavelength, idlerJSI[::-1])
-    plt.axvline(x=1.55, linestyle='--', color='m')
+    plt.axvline(x=signal[0,mid]*1E6, linestyle='--', color='m')
     plt.xlabel('Wavelength ($\mu$m)')
     figure2.add_subplot(figSpc2[0,2])
     plt.yticks([])
@@ -216,7 +223,7 @@ def plotFigure(Phi, PEF, JSI, signal, idler,\
     plt.ylim([0,1])
     plt.xticks([])
     plt.yticks([])
-    plt.text(0.1,0.2,summary)
+    plt.text(0.1,0.1,summary)
 
 
     # solution to aliasing when saving plot to as vecto grpahics
@@ -234,8 +241,13 @@ def plotFigure(Phi, PEF, JSI, signal, idler,\
     plt.show()
 
 ############################## Main equations ##############################
+def crystalExpansion(lo, temp, alpha=6.7E-6, beta=11E-9, enable = True):
+    if enable:
+        return lo*(1 + alpha*(temp-25) + beta*(temp-25)**2)
+    else:
+        return lo
 
-def sellmeierEqn(wavelength):
+def sellmeierEqn(wavelength, temperature = 25):
     # Sellmeier equation for ppKtp
     # Sellmeier Equation, ny obtained from Konig and Wong 2004
     # Sellmeier Equation, nz obtained from Fradkin et al. 1999
@@ -244,111 +256,124 @@ def sellmeierEqn(wavelength):
     A = [2.09930, 0.922683, 0.0467695, 0.0138408]
     B = [2.12725, 1.18431, 5.14852E-2, 0.6603, 100.00507, 9.68956E-3]
 
-    ny = np.sqrt(A[0] + A[1]/(1 - A[2]/np.power(wavelength,2)) - A[3]*np.power(wavelength,2))
-    nz = np.sqrt(B[0] + B[1]/(1 - B[2]/np.power(wavelength,2)) \
-                      + B[3]/(1 - B[4]/np.power(wavelength,2)) - B[5]*np.power(wavelength,2))
+    ny = np.sqrt(A[0] + (A[1]*np.power(wavelength,2)) /
+                        (np.power(wavelength,2) - A[2]) -
+                        A[3]*np.power(wavelength,2))
 
-    return ny, nz
+    nz = np.sqrt(B[0] + (B[1]*np.power(wavelength,2)) /
+                        (np.power(wavelength,2) - B[2]) +
+                        (B[3]*np.power(wavelength,2)) /
+                        (np.power(wavelength,2) - B[4]) -
+                        B[5]*np.power(wavelength,2))
 
-def diffSellmeierEqn(wavelength, tol = 1E-4):
+    deltaNy, deltaNz = tempDependence(wavelength, temperature)
+
+    return ny + deltaNy, nz + deltaNz
+
+def diffSellmeierEqn(wavelength, temperature, h = 1E-4):
     # differentiating Sellmeier equation for ppKtp
     # Sellmeier Equation, ny obtained from Konig and Wong 2004
     # Sellmeier Equation, nz obtained from Fradkin et al. 1999
     # wavelength in micron
 
-    nyPlus, nzPlus = sellmeierEqn(np.asarray(wavelength)+tol)
-    nyMinus, nzMinus =  sellmeierEqn(np.asarray(wavelength)-tol)
-    dny = (nyPlus-nyMinus)/(2*tol)
-    dnz = (nzPlus-nzMinus)/(2*tol)
+    nyPos, nzPos = sellmeierEqn(wavelength+h, temperature)
+    nyNeg, nzNeg = sellmeierEqn(wavelength-h, temperature)
+
+    dny = (nyPos-nyNeg)/(2*h)
+    dnz = (nzPos-nzNeg)/(2*h)
+
     return dny, dnz
 
 def tempDependence(wavelength = 0.775, temperature = 25):
     # Emanueli and Arie derived the temp dependence of refractive index of KTP
 
-    n1z = lambda w: np.sum([9.9587E-6/w**0, 9.9228E-6/w**1, -8.9603E-6/w**2, 4.1010E-6/w**3])
-    n2z = lambda w: np.sum([-1.1882E-8/w**0, 10.459E-8/w**1, -9.8136E-8/w**2, 3.1481E-8/w**3])
-    n1y = lambda w: np.sum([6.2897E-6/w**0, 6.3061E-6/w**1, -6.0629E-6/w**2, 2.6486E-6/w**3])
-    n2y = lambda w: np.sum([-0.14445E-8/w**0, 2.2244E-8/w**1, -3.5770E-8/w**2, 1.3470E-8/w**3])
+    n1z = lambda w: 9.9587E-6/w**0 + 9.9228E-6/w**1 - 8.9603E-6/w**2 + 4.1010E-6/w**3
+    n2z = lambda w: -1.1882E-8/w**0 + 10.459E-8/w**1 - 9.8136E-8/w**2 + 3.1481E-8/w**3
+    n1y = lambda w: 6.2897E-6/w**0 + 6.3061E-6/w**1 - 6.0629E-6/w**2 + 2.6486E-6/w**3
+    n2y = lambda w: -0.14445E-8/w**0 + 2.2244E-8/w**1 - 3.5770E-8/w**2 + 1.3470E-8/w**3
 
-    refractiveIndexZ1 = np.array(list(map(n1z, wavelength)))
-    refractiveIndexZ2 = np.array(list(map(n2z, wavelength)))
-    refractiveIndexY1 = np.array(list(map(n1y, wavelength)))
-    refractiveIndexY2 = np.array(list(map(n2y, wavelength)))
+    refractiveIndexY1 = n1y(wavelength)
+    refractiveIndexY2 = n2y(wavelength)
+    refractiveIndexZ1 = n1z(wavelength)
+    refractiveIndexZ2 = n2z(wavelength)
 
     deltaNy = refractiveIndexY1*(temperature-25) + refractiveIndexY2*(temperature-25)**2
     deltaNz = refractiveIndexZ1*(temperature-25) + refractiveIndexZ2*(temperature-25)**2
     return deltaNy, deltaNz
 
-def groupIndex(wavelength, temp=25):
-    # ng = n - wavelength*(dn/dwavelength)
-    # TODO: temperature denpendence
-    delNy, delNz = tempDependence(wavelength, temp)
-    ny, nz = sellmeierEqn(wavelength)
-    dny, dnz = diffSellmeierEqn(wavelength)
+def groupIndex(wavelength, temperature=25):
+    # ng = n - wavelength*(dn/dwavelength) [inverseGrpVel]
 
-    rftIdxY = ny + delNy
-    rftIdxZ = nz + delNz
-    grpIdxY = rftIdxY - wavelength*dny
-    grpIdxZ = rftIdxZ - wavelength*dnz
+    ny, nz = sellmeierEqn(wavelength, temperature)
+    dny, dnz = diffSellmeierEqn(wavelength, temperature)
+
+    grpIdxY = ny - wavelength*dny
+    grpIdxZ = nz - wavelength*dnz
 
     # return grpIdxY, grpIdxZ, ny+delNy, nz+delNz
-    return {'grpIdxY': grpIdxY, 'grpIdxZ': grpIdxZ, \
-            'rftIdxY': rftIdxY, 'rftIdxZ': rftIdxZ}
+    return {'grpIdxY': grpIdxY, 'grpIdxZ': grpIdxZ, 'rftIdxY': ny, 'rftIdxZ': nz}
 
-def deltaK(signalWavelength, idlerWavelength, centralWavelength, pumpWavelength,\
-           temp = 25):
-    # Mainly designed for dengenerate downconversion
+def deltaK(signalWavelength, idlerWavelength, centralWavelength, temp = 25):
     # Constructing the wave vector mismatch grid with first order approximation
+    # PRL 105, 253601 (2010)
 
     omegaIdler = wavelength2AngFreq(idlerWavelength) # meshgrid
     omegaSignal = wavelength2AngFreq(signalWavelength) # meshgrid
-    omegaPump = wavelength2AngFreq(pumpWavelength) # float
-    omegaCentral = wavelength2AngFreq(centralWavelength) # float
 
-    nPump = groupIndex([pumpWavelength*1E6], temp)
-    nCentral = groupIndex([centralWavelength*1E6], temp)
+    omegaPump = wavelength2AngFreq(centralWavelength[0]) # float
+    omegaSignalCentral = wavelength2AngFreq(centralWavelength[1]) # float
+    omegaIdlerCentral = wavelength2AngFreq(centralWavelength[2]) # float
+
+    nPump = groupIndex(centralWavelength[0]*1E6, temp) # float
+    nCentralSignal = groupIndex(centralWavelength[1]*1E6, temp) # float
+    nCentralIdler = groupIndex(centralWavelength[2]*1E6, temp) # float
+
     inverseGrpVelPump = nPump['grpIdxY']/C
-    inverseGrpVelSignal = nCentral['grpIdxY']/C
-    inverseGrpVelIdler = nCentral['grpIdxZ']/C
+    inverseGrpVelSignal = nCentralSignal['grpIdxY']/C  # float
+    inverseGrpVelIdler = nCentralIdler['grpIdxZ']/C  # float
 
     # Defining Y-axis as signal and Z-axis as idler
-
-    nSignal, nIdler = np.meshgrid(groupIndex(signalWavelength[0,:]*1E6, temp)['rftIdxY'], \
-                                  groupIndex(idlerWavelength[:,0]*1E6, temp)['rftIdxZ'])
+    nSignal = groupIndex(signalWavelength*1E6, temp)['rftIdxY']
+    nIdler = groupIndex(idlerWavelength*1E6, temp)['rftIdxZ']
 
     kPump = omegaPump*nPump['rftIdxY']/C
-    kCentralY = omegaCentral*nCentral['rftIdxY']/C # signal
-    kCentralZ = omegaCentral*nCentral['rftIdxZ']/C # idler
-    kSignal = nSignal*omegaSignal/C
-    kIdler  = nIdler*omegaIdler/C
+    kCentralY = omegaSignalCentral*nCentralSignal['rftIdxY']/C # signal
+    kCentralZ = omegaIdlerCentral*nCentralIdler['rftIdxZ']/C # idler
+
+    kSignal = nSignal*omegaSignal/C # meshgrid
+    kIdler  = nIdler*omegaIdler/C # meshgrid
 
     # First order approximation to wavevector mismatch centered
     # around centralWavelength
     dk0 = kPump - kCentralY - kCentralZ
     dK = dk0 + \
-    (inverseGrpVelPump - inverseGrpVelIdler)*(omegaIdler-omegaCentral) + \
-    (inverseGrpVelPump - inverseGrpVelSignal)*(omegaSignal-omegaCentral)
+    (inverseGrpVelPump - inverseGrpVelIdler)*(omegaIdler-omegaIdlerCentral) + \
+    (inverseGrpVelPump - inverseGrpVelSignal)*(omegaSignal-omegaSignalCentral)
 
     axis = np.degrees(np.arctan(-(inverseGrpVelPump-inverseGrpVelIdler)/ \
                                  (inverseGrpVelPump-inverseGrpVelSignal)))
 
+    meanGrpIdx = (nCentralSignal['grpIdxY'] + nCentralIdler['grpIdxZ'])/2
+
+    print("Mean group index: {:0.04f}".format(meanGrpIdx))
     # print('dk0 = {}'.format(dk0))
-    # print("Ideal domain width: {:0.12f} micron".format(np.pi/np.abs(dk0[0])*1E6))
-    # print('PMF axis: {:0.02f}'.format(axis[0]))
+    print("Ideal domain width: {:0.04f} micron".format(np.pi/np.abs(dk0)*1E6))
 
     return nPump['rftIdxY'], nSignal, nIdler, kPump, kSignal, kIdler, dK, axis
 
-def pumpEnvFunc(idlerWavelength,signalWavelength, centralWavelength, FWHM, \
+def pumpEnvFunc(idlerWavelength, signalWavelength, centralWavelength, FWHM, \
                 shape = 'sech'):
+    # centralWavelength = [pump, signal, idler]
     omegaIdler   = wavelength2AngFreq(idlerWavelength)
     omegaSignal  = wavelength2AngFreq(signalWavelength)
-    omegaCentral = wavelength2AngFreq(centralWavelength)
-    pumpWavelength = centralWavelength/2 # for degenerate down-conversion
 
-    angFWHM, sigmaPEF = fwhm2Sigma(FWHM, pumpWavelength)
+    omegaSignalCentral = wavelength2AngFreq(centralWavelength[1])
+    omegaIdlerCentral = wavelength2AngFreq(centralWavelength[2])
 
-    signal = omegaSignal-omegaCentral
-    idler = omegaIdler-omegaCentral
+    angFWHM, sigmaPEF = fwhm2Sigma(FWHM, centralWavelength[0])
+
+    signal = omegaSignal-omegaSignalCentral
+    idler = omegaIdler-omegaIdlerCentral
 
     # The sech and Gaussian PEFs have equal width when tau ~ 0.712sigmaPEF
     if shape == 'gauss':
@@ -390,23 +415,26 @@ def customPMF(dk, domainWidth, polingConfig):
     return np.abs(Phi)
 
 def customPhaseMatchedFunc(lc, polingConfig, crystalTemp,\
-                           signal, idler, centralWavelength, pumpWavelength,\
-                           pumpWaist, signalWaist, idlerWaist):
+                           signal, idler, centralWavelength,\
+                           pumpWaist, signalWaist, idlerWaist,
+                           segments=5):
 
+    domainDiv = np.int(segments) # subdivide each domain into smaller segments
     crystalLen = lc*len(polingConfig)
-    # print("Crystal length: {:0.02f}mm".format(crystalLen*1E3))
-    repPolingConfig = np.repeat(polingConfig, 1)
+    repPolingConfig = np.repeat(polingConfig, domainDiv) # subdivide for integration
     numSegments = len(repPolingConfig)
+
+    # Add uncertainty to segments
     z = np.linspace(-1,1,numSegments)
 
     # Eqn 16 of Bennink 2010
     NP = 5.57E18 # mean number of pump photons (the pump energy divided by hbar*omega_p)
 
     nPump, nSignal, nIdler, kPump, kIdler, kSignal, dk, axis = \
-    deltaK(signal, idler, centralWavelength, pumpWavelength, temp = crystalTemp)
+    deltaK(signal, idler, centralWavelength, temp = crystalTemp)
 
     numGrid = len(signal)
-    integral = 1j*np.zeros((numGrid, numGrid, numSegments))
+    integral = np.zeros((numGrid, numGrid, numSegments), dtype = 'cdouble')
 
     # Focal parameter eqn 11
     pumpFocalParam = crystalLen/(kPump*pumpWaist**2)
@@ -421,22 +449,31 @@ def customPhaseMatchedFunc(lc, polingConfig, crystalTemp,\
             (1 + ((kSignal+dk)/(kPump-dk))*(pumpFocalParam/signalFocalParam) + \
                  ((kIdler+dk)/(kPump-dk))*(pumpFocalParam/idlerFocalParam))
 
-    C = (dk/kPump)*(pumpFocalParam**2/(signalFocalParam*idlerFocalParam))*(APlus/np.power(BPlus,2))
+    CPlus = (dk/kPump)*(pumpFocalParam**2/(signalFocalParam*idlerFocalParam))* \
+            (APlus/BPlus**2)
 
     # aggregate focal parameter
     aggreFocalParam = (BPlus/APlus)*((signalFocalParam*idlerFocalParam)/pumpFocalParam)
 
     constantOne = np.sqrt((8.0*PI**2*EFFICICIENCYFACTOR*HBAR*nSignal*nIdler*NP*crystalLen)/(PERMITTIVITY*nPump))
     constantTwo = CHI2EFF/(signal*idler*np.sqrt(APlus*BPlus))
-    integrand = lambda dl: (np.sqrt(aggreFocalParam)*np.exp(1j*(dk*crystalLen)*dl/2))/ \
-                           (1 - 1j*aggreFocalParam*dl - C*np.power(aggreFocalParam,2)*dl**2)
 
-    for k in range(numSegments):
-        integral[:,:,k] = repPolingConfig[k]*integrand(z[k])
-    # ENDFOR
+    # integrand = lambda dl: (np.sqrt(aggreFocalParam)*np.exp(1j*(dk*crystalLen)*dl/2))/ \
+    #                        (1 - 1j*aggreFocalParam*dl - CPlus*(aggreFocalParam**2)*dl**2)
+
+    # for k in range(numSegments):
+    #     integral[:,:,k] = repPolingConfig[k]*integrand(z[k])
+
+    exponent = np.exp(np.einsum("ij,k -> ijk", 1j*(dk*crystalLen), z/2))
+    numerator =  np.einsum("ij,ijk -> ijk", np.sqrt(aggreFocalParam), exponent)
+    denom = 1 - 1j*np.einsum("ij,k->ijk", aggreFocalParam, z) - \
+                np.einsum("ij,k->ijk", CPlus*(aggreFocalParam**2), z**2)
+
+    integrand = numerator/denom
+    integral = np.einsum('k, ijk -> ijk', repPolingConfig, integrand)
 
     Phi = constantOne*constantTwo*np.trapz(integral, z, axis=-1)
-    return Phi
+    return Phi, axis
 
 def getPurity(JSA):
     # From the Schmidt decomposition, we can see that w is entangled
@@ -460,7 +497,7 @@ def costFunction(x, PEF, Phi):
     loss = 1-purity
     return loss
 
-def getHOM(idlerWavelength, signalWavelength, idler, signal, JSI, tau):
+def getHOM(idlerWavelength, signalWavelength, idler, signal, JSAPrime, JSA, tau):
     # Calculate dependent HOM dip with JSI
     # arXiv:1711.00080v1, EQN 69 (NAISE)
     omegaSignal = wavelength2AngFreq(signalWavelength)
@@ -468,7 +505,7 @@ def getHOM(idlerWavelength, signalWavelength, idler, signal, JSI, tau):
     signal = wavelength2AngFreq(signal)
     idler = wavelength2AngFreq(idler)
 
-    prob_conic = lambda tau: JSI*np.exp(1j*(idler-signal)*tau)
+    prob_conic = lambda tau: (JSAPrime.conj().T@JSA)*np.exp(1j*(idler-signal)*tau)
     Prob = np.array([simps(simps(prob_conic(t), omegaIdler), omegaSignal) for t in tau])
     Prob /= np.max(Prob)
 
